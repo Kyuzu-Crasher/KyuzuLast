@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X-TNIGHT Sticker - Website</title>
+    <!-- Muat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Muat Ikon Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* --- Palet Warna & Variabel (Dark Grey Tech) --- */
+        :root {
+            --bg-dark: #121212; /* Background Hitam Pekat */
+            --card-bg: #1F2937; /* Background Kartu/Card (Abu-abu Gelap) */
+            --input-bg: #374151; /* Background Input (Abu-abu Lebih Gelap) */
+            --text-primary: #E5E7EB; /* Teks Putih/Terang */
+            --text-secondary: #9CA3AF; /* Teks Sekunder/Pudar */
+            --main-accent: #9CA3AF; /* Aksesn Abu-abu Silver */
+            --secondary-accent: #4B5563; /* Aksesn Abu-abu Biru */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- Canvas Bintang Geometri (Perbaikan Stabilitas) --- */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15; /* Opacity ditingkatkan agar terlihat jelas */
+        }
+
+        /* --- Global Styling --- */
+        .neon-submit-btn {
+            background-color: var(--secondary-accent);
+            color: var(--text-primary);
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(156, 163, 175, 0.3);
+        }
+        .neon-submit-btn:hover {
+            background-color: var(--main-accent);
+            box-shadow: 0 0 15px rgba(156, 163, 175, 0.5);
+        }
+        .tab-active {
+            border-bottom: 3px solid var(--main-accent);
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .main-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--secondary-accent);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- Floating Avatar --- */
+        @keyframes float-effect {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating-avatar {
+            animation: float-effect 3s infinite ease-in-out;
+        }
+        
+        /* --- Loading and Result Styles --- */
+        .result-box {
+            background-color: var(--input-bg);
+            border: 2px solid var(--main-accent);
+            color: var(--text-primary);
+        }
+        
+        /* --- Typing Effect --- */
+        #typing-text {
+            border-right: .15em solid var(--main-accent); /* Cursor */
+            white-space: nowrap; 
+            overflow: hidden; 
+            width: 0; 
+            animation: 
+                typing 4s steps(40, end) infinite,
+                blink-caret .75s step-end infinite;
+        }
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--main-accent); }
+        }
+        /* --- Efek Smooth Saat Masuk --- */
+        .fade-in {
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .opacity-100 {
+            opacity: 1;
+        }
+        /* Dot Pulse for Loading */
+        .dot-pulse {
+            display: flex;
+            align-items: center;
+            height: 1rem;
+        }
+        .dot-pulse::before, .dot-pulse::after, .dot-pulse span {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background-color: var(--main-accent);
+            border-radius: 50%;
+            margin: 0 4px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        .dot-pulse span {
+            animation-delay: 0.3s;
+        }
+        .dot-pulse::after {
+            animation-delay: 0.6s;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(0.7); opacity: 0.5; }
+            50% { transform: scale(1); opacity: 1; }
+        }
+
+    </style>
+</head>
+<body class="p-0 m-0">
+    <!-- Canvas untuk Efek Bintang Geometri -->
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="app-container" class="min-h-screen flex flex-col items-center p-4 pt-8 fade-in">
+        
+        <!-- HEADER (Logo, Banner, Judul) -->
+        <header class="w-full max-w-lg mb-8 text-center">
+            <!-- Floating Avatar dan Border -->
+            <div class="inline-block p-1 rounded-full relative main-card overflow-hidden floating-avatar">
+                <img src="https://j.top4top.io/p_3599r4vbv1.jpg" alt="X-TNIGHT Logo" class="w-24 h-24 rounded-full object-cover border-4 border-transparent" />
+            </div>
+            
+            <h1 class="text-4xl font-extrabold mt-4" style="color: var(--text-primary);">
+                X-TNIGHT <span class="text-xl" style="color: var(--main-accent);">(STICKER)</span>
+            </h1>
+            <p id="typing-text" class="text-sm mt-1 mx-auto max-w-xs text-center" style="color: var(--text-secondary);">
+                Website Generator Sticker WhatsApp Simple
+            </p>
+        </header>
+
+        <!-- PILIHAN MODE (Tabs) -->
+        <div class="w-full max-w-lg flex justify-around p-2 mb-6 main-card rounded-xl">
+            <button id="tab-anomali" class="px-4 py-2 text-sm rounded-lg hover:bg-gray-700 transition-colors tab-active" onclick="switchMode('anomali')">
+                <i data-lucide="sparkles" class="w-4 h-4 mr-1 inline"></i> Anomali (Text to Image)
+            </button>
+            <button id="tab-smeme" class="px-4 py-2 text-sm rounded-lg hover:bg-gray-700 transition-colors" onclick="switchMode('smeme')">
+                <i data-lucide="camera" class="w-4 h-4 mr-1 inline"></i> S-Meme (Image + Text)
+            </button>
+        </div>
+
+        <!-- AREA GENERATOR -->
+        <div id="generator-area" class="w-full max-w-lg space-y-6">
+
+            <!-- MODE 1: ANOMALI (TEXT TO IMAGE) -->
+            <div id="mode-anomali" class="space-y-4 main-card p-6 rounded-xl">
+                <h2 class="text-xl font-bold mb-3" style="color: var(--main-accent);">Buat Stiker Anomali</h2>
+                <p class="text-sm text-center text-gray-400">Buat Stiker Anomali Ala WhatsApp Dan Kamu Bisa Download Hasilnya</p>
+                <input type="text" id="anomali-text" placeholder="Masukan Teks Nya..." maxlength="50" class="w-full p-3 rounded-lg bg-[var(--input-bg)] text-white border-b border-gray-600 focus:ring focus:ring-gray-500 outline-none transition-colors">
+                <button id="btn-generate-anomali" class="w-full p-3 rounded-lg neon-submit-btn text-sm font-semibold mt-4" disabled>
+                    <i data-lucide="wand-2" class="w-4 h-4 mr-2 inline"></i> CREATE STICKER ANOMALI
+                </button>
+            </div>
+
+            <!-- MODE 2: S-MEME (IMAGE + TEXT) -->
+            <div id="mode-smeme" class="space-y-4 main-card p-6 rounded-xl hidden">
+                <h2 class="text-xl font-bold mb-3" style="color: var(--main-accent);">Buat Stiker S-Meme</h2>
+                <p class="text-sm text-center text-gray-400">Unggah foto dan tambahkan teks ala stiker meme WhatsApp.</p>
+                
+                <input type="file" id="smeme-image" accept="image/*" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-gray-700 file:text-white hover:file:bg-gray-600" required>
+                <input type="text" id="smeme-text" placeholder="Masukan Teks Memenya" class="w-full p-3 rounded-lg bg-[var(--input-bg)] text-white border-b border-gray-600 focus:ring focus:ring-gray-500 outline-none transition-colors">
+                <canvas id="smeme-canvas" width="512" height="512" class="hidden w-full max-w-sm mx-auto border border-dashed border-gray-600 rounded-lg"></canvas>
+
+                <button id="btn-generate-smeme" class="w-full p-3 rounded-lg neon-submit-btn text-sm font-semibold mt-4" disabled>
+                    <i data-lucide="layers-3" class="w-4 h-4 mr-2 inline"></i> CREATE STICKER MEME
+                </button>
+            </div>
+            
+            <!-- AREA PRATINJAU DAN HASIL -->
+            <div id="result-area" class="result-box p-4 rounded-xl hidden">
+                <h3 class="text-lg font-bold mb-3">Hasil Stiker Anda</h3>
+                <div class="flex flex-col items-center space-y-4">
+                    <img id="sticker-preview" class="w-40 h-40 border border-gray-600 rounded-xl" alt="Pratinjau Stiker">
+                    <a id="download-link" href="#" download="whatsapp_sticker.png" class="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-full font-semibold text-sm transition-colors">
+                        <i data-lucide="download" class="w-4 h-4 mr-2 inline"></i> DOWNLOAD STICKER
+                    </a>
+                </div>
+            </div>
+            
+            <!-- LOADING INDICATOR -->
+            <div id="loading-indicator" class="w-full max-w-lg p-4 text-center rounded-lg bg-gray-700 hidden">
+                <div class="dot-pulse mx-auto"><span></span></div>
+                <p class="text-sm mt-2 text-gray-400">Sedang memproses stiker AI... Tunggu sebentar.</p>
+            </div>
+        </div>
+
+        <!-- AREA STATUS PENGGUNA -->
+        <div class="w-full max-w-lg mt-10 space-y-4">
+            <h3 class="text-xl font-bold tracking-wider" style="color: var(--main-accent);">Information</h3>
+            <div class="grid grid-cols-3 gap-3">
+                <div class="main-card p-4 rounded-xl text-center">
+                    <i data-lucide="users" class="w-6 h-6 mx-auto mb-1" style="color: var(--text-secondary);"></i>
+                    <p class="text-lg font-bold">9rb+</p>
+                    <p class="text-xs text-gray-400">Total Pengguna</p>
+                </div>
+                <div class="main-card p-4 rounded-xl text-center">
+                    <i data-lucide="zap" class="w-6 h-6 mx-auto mb-1" style="color: var(--text-secondary);"></i>
+                    <p class="text-lg font-bold">Proses Cepat</p>
+                    <p class="text-xs text-gray-400">Waktu Tunggu Min</p>
+                </div>
+                <div class="main-card p-4 rounded-xl text-center">
+                    <i data-lucide="check-circle" class="w-6 h-6 mx-auto mb-1" style="color: var(--text-secondary);"></i>
+                    <p class="text-lg font-bold">Mudah & Praktis</p>
+                    <p class="text-xs text-gray-400">UI Simple</p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- Area Modal (Untuk pesan error) -->
+    <div id="custom-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-[var(--card-bg)] p-8 rounded-xl shadow-2xl max-w-sm w-full border-2 border-red-500">
+            <h3 id="modal-title" class="text-2xl font-bold mb-4 text-red-400">Peringatan!</h3>
+            <p id="modal-message" class="text-gray-300 mb-6 text-base">Terjadi kesalahan.</p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="document.getElementById('custom-modal').classList.add('hidden')" class="px-6 py-2 bg-gray-600 rounded-full text-white font-semibold hover:bg-gray-500 transition-colors">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Inisialisasi ikon Lucide
+        lucide.createIcons();
+        
+        // --- KONFIGURASI DAN VARIABEL GLOBAL ---
+        const IMAGE_API_MODEL = 'imagen-3.0-generate-002';
+        const IMAGE_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${IMAGE_API_MODEL}:predict?key=`;
+        const API_KEY = ""; // Kunci API akan diisi oleh lingkungan Canvas
+
+        let currentMode = 'anomali';
+        let isGenerating = false;
+        
+        // --- DOM ELEMENTS ---
+        const appContainer = document.getElementById('app-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const resultArea = document.getElementById('result-area');
+        const stickerPreview = document.getElementById('sticker-preview');
+        const downloadLink = document.getElementById('download-link');
+        const modal = document.getElementById('custom-modal');
+        const modalMessage = document.getElementById('modal-message');
+
+        // Mode Anomali (Text to Image)
+        const modeAnomali = document.getElementById('mode-anomali');
+        const anomaliText = document.getElementById('anomali-text');
+        const btnGenerateAnomali = document.getElementById('btn-generate-anomali');
+        const tabAnomali = document.getElementById('tab-anomali');
+
+        // Mode S-Meme (Image + Text)
+        const modeSmemee = document.getElementById('mode-smeme');
+        const smemeImage = document.getElementById('smeme-image');
+        const smemeText = document.getElementById('smeme-text');
+        const btnGenerateSmemee = document.getElementById('btn-generate-smeme');
+        const smemeCanvas = document.getElementById('smeme-canvas');
+        const tabSmemee = document.getElementById('tab-smeme');
+
+        // Canvas Bintang Geometri 
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        const stars = [];
+        const STAR_COUNT = 70;
+        const LINE_DISTANCE = 100;
+        // PARTICLE_COLOR disetel ke nilai Hex string langsung untuk kompatibilitas file://
+        const PARTICLE_COLOR = '#A0A0A0'; 
+        
+        
+        // --- FUNGSI UTILITY ---
+        
+        function showModal(message, title = "Peringatan!") {
+            document.getElementById('modal-title').textContent = title;
+            modalMessage.innerHTML = message;
+            modal.classList.remove('hidden');
+        }
+        
+        function setLoading(state) {
+            isGenerating = state;
+            loadingIndicator.classList.toggle('hidden', !state);
+            btnGenerateAnomali.disabled = state || anomaliText.value.trim().length === 0;
+            btnGenerateSmemee.disabled = state || !smemeImage.files.length;
+        }
+
+        function downloadSticker(dataUrl) {
+            downloadLink.href = dataUrl;
+            downloadLink.click();
+        }
+
+        // --- FUNGSI CANVAS (S-MEME) ---
+        function drawSmemeeCanvas(image, text = "") {
+            const size = 512;
+            smemeCanvas.width = size;
+            smemeCanvas.height = size;
+            const ctx = smemeCanvas.getContext('2d');
+            
+            // 1. Gambar Gambar Asli
+            // Menggambar gambar agar menutupi seluruh canvas
+            let ratio = Math.max(smemeCanvas.width / image.width, smemeCanvas.height / image.height);
+            let x = (smemeCanvas.width - image.width * ratio) / 2;
+            let y = (smemeCanvas.height - image.height * ratio) / 2;
+            ctx.drawImage(image, x, y, image.width * ratio, image.height * ratio);
+
+            // 2. Gambar Teks Meme
+            if (text.trim()) {
+                const lines = text.toUpperCase().split('\n');
+                ctx.fillStyle = 'white';
+                ctx.strokeStyle = 'black';
+                ctx.lineWidth = 10; 
+                ctx.textAlign = 'center';
+                
+                // Font yang khas meme
+                let fontSize = 40;
+                ctx.font = `900 ${fontSize}px Impact, sans-serif`;
+
+                // Posisi Y (mulai dari bawah)
+                let yPos = size - 20;
+
+                for (let i = lines.length - 1; i >= 0; i--) {
+                    const line = lines[i];
+                    
+                    // Sketsa (Outline) Hitam
+                    ctx.strokeText(line, size / 2, yPos);
+                    // Isi Putih
+                    ctx.fillText(line, size / 2, yPos);
+                    
+                    yPos -= fontSize + 10; 
+                }
+            }
+        }
+
+        // --- FUNGSI UTAMA GENERATOR ---
+        
+        function switchMode(mode) {
+            currentMode = mode;
+            tabAnomali.classList.remove('tab-active');
+            tabSmemee.classList.remove('tab-active');
+
+            if (mode === 'anomali') {
+                modeAnomali.classList.remove('hidden');
+                modeSmemee.classList.add('hidden');
+                tabAnomali.classList.add('tab-active');
+            } else {
+                modeAnomali.classList.add('hidden');
+                modeSmemee.classList.remove('hidden');
+                tabSmemee.classList.add('tab-active');
+            }
+            
+            resultArea.classList.add('hidden'); // Sembunyikan hasil saat ganti mode
+            setLoading(false);
+        }
+        
+        // --- MODE ANOMALI (API Panggilan) ---
+        async function generateAnomaliSticker() {
+            const text = anomaliText.value.trim();
+            if (!text) return;
+
+            setLoading(true);
+            resultArea.classList.add('hidden');
+
+            // Prompt yang sangat spesifik untuk stiker Anomali (Teks Abu-abu/Hitam di atas latar Putih, Font Regular)
+            const prompt = `A minimalist WhatsApp sticker, 512x512 PNG. The entire background must be a solid, pure white (#FFFFFF) with no gradients or shadows. Display the following text prominently in a regular weight, sans-serif font (like Inter, Regular weight), centered, using a dark gray color (#333333). Do not use bold font. Do not add any illustrations, borders, or non-text elements. The output must be ONLY the sticker image. Text to display: "${text}"`;
+            
+            const payload = { 
+                instances: [{ prompt: prompt }], 
+                parameters: { "sampleCount": 1, "aspectRatio": "1:1" } 
+            };
+            
+            const apiUrl = `${IMAGE_API_URL}${API_KEY}`;
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API gagal dengan status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                const base64Data = result?.predictions?.[0]?.bytesBase64Encoded;
+                
+                if (!base64Data) {
+                    throw new Error("Gagal mendapatkan data gambar dari AI.");
+                }
+
+                const imageUrl = `data:image/png;base64,${base64Data}`;
+                stickerPreview.src = imageUrl;
+                downloadLink.href = imageUrl;
+                
+                resultArea.classList.remove('hidden');
+            } catch (error) {
+                showModal(`Gagal membuat stiker. Pesan: ${error.message}. Pastikan Anda memiliki koneksi stabil dan API Key (jika diperlukan).`, "Error AI Generation");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // --- HANDLERS ---
+        
+        btnGenerateAnomali.addEventListener('click', generateAnomaliSticker);
+        anomaliText.addEventListener('input', () => {
+            btnGenerateAnomali.disabled = isGenerating || anomaliText.value.trim().length === 0;
+        });
+        
+        // Mode S-Meme Handlers
+        smemeImage.addEventListener('change', () => {
+             btnGenerateSmemee.disabled = isGenerating || !smemeImage.files.length;
+        });
+
+        btnGenerateSmemee.addEventListener('click', () => {
+            if (!smemeImage.files.length) {
+                showModal("Mohon unggah file gambar terlebih dahulu.");
+                return;
+            }
+            
+            setLoading(true);
+            resultArea.classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Gambar pratinjau di canvas sebelum didownload
+                    drawSmemeeCanvas(img, smemeText.value); 
+                    
+                    // Simpan hasil canvas ke pratinjau dan link download
+                    const dataUrl = smemeCanvas.toDataURL('image/png');
+                    stickerPreview.src = dataUrl;
+                    downloadLink.href = dataUrl;
+                    
+                    resultArea.classList.remove('hidden');
+                    setLoading(false);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(smemeImage.files[0]);
+        });
+        
+        // --- CANVAS BINTANG GEOMETRI LOGIC ---
+
+        function initStars() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            for (let i = 0; i < STAR_COUNT; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 0.5,
+                    vx: Math.random() * 0.5 - 0.25,
+                    vy: Math.random() * 0.5 - 0.25
+                });
+            }
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = PARTICLE_COLOR;
+            ctx.strokeStyle = PARTICLE_COLOR; // Menggunakan warna yang sama untuk garis dan bintang
+
+            for (let i = 0; i < STAR_COUNT; i++) {
+                const star = stars[i];
+                star.x += star.vx;
+                star.y += star.vy;
+
+                // Batas canvas
+                if (star.x < 0 || star.x > canvas.width) star.vx *= -1;
+                if (star.y < 0 || star.y > canvas.height) star.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Garis Koneksi
+                for (let j = i + 1; j < STAR_COUNT; j++) {
+                    const otherStar = stars[j];
+                    const distance = Math.sqrt(Math.pow(star.x - otherStar.x, 2) + Math.pow(star.y - otherStar.y, 2));
+
+                    if (distance < LINE_DISTANCE) {
+                        ctx.lineWidth = 0.2;
+                        ctx.globalAlpha = 1 - (distance / LINE_DISTANCE);
+                        ctx.beginPath();
+                        ctx.moveTo(star.x, star.y);
+                        ctx.lineTo(otherStar.x, otherStar.y);
+                        ctx.stroke();
+                        ctx.globalAlpha = 1; 
+                    }
+                }
+            }
+            requestAnimationFrame(drawStars);
+        }
+        
+        // --- INISIALISASI ---
+        
+        window.addEventListener('resize', initStars);
+        
+        // Menggunakan window.onload untuk memastikan canvas dimuat saat file diakses secara lokal
+        window.onload = function () {
+            // Inisialisasi Bintang
+            initStars();
+            drawStars();
+            
+            // Inisialisasi Tampilan
+            appContainer.classList.add('opacity-100');
+        };
+        
+    </script>
+</body>
+</html>
